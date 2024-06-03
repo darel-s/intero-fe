@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
     return (
         <html lang="en">
             <body className={inter.className}>
-                <div className="flex">
+                <div className="flex bg-[#F4F3F2]">
                     {pathname !== "/login" && <Sidebar />}
                     <main className="flex-grow">{children}</main>
                     <Toaster />

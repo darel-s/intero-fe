@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
@@ -12,11 +12,20 @@ function loginPage() {
     const [password, setPassword] = useState("");
     const router = useRouter();
 
+    useEffect(() => {
+        if (Cookies.get("token")) {
+            router.push("/");
+        }
+    });
+
     const handleLogin = async (e) => {
         e.preventDefault();
 
         try {
             const response = await axios.post("/login", { email, password });
+            const { token } = response;
+
+            Cookies.set("token", token);
 
             router.push("/");
             toast.success("Login berhasil");
@@ -28,7 +37,7 @@ function loginPage() {
 
     return (
         <div className="relative h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
-            <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
+            <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex">
                 <div className="absolute inset-0 bg-zinc-900" />
                 <div className="relative z-20 flex items-center text-lg font-medium">
                     <svg

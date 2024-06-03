@@ -2,19 +2,20 @@
 
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { format } from "date-fns";
 import toast from "react-hot-toast";
 
-const ParentTable = () => {
+const HistoryTable = () => {
     const [data, setData] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
-    const [currentParent, setCurrentParent] = useState(null);
 
     const fetchData = async () => {
         try {
             const result = await axios(
-                `${process.env.NEXT_PUBLIC_API_URL}/parents`
+                `${process.env.NEXT_PUBLIC_API_URL}/babyhistories`
             );
+            console.log(result.data);
             setData(result.data);
         } catch (error) {
             console.error(error);
@@ -24,78 +25,6 @@ const ParentTable = () => {
     useEffect(() => {
         fetchData();
     }, []);
-
-    const [newParent, setNewParent] = useState({
-        name: "",
-        kk: "",
-        nik: "",
-        hp: "",
-        address: "",
-        rt: "",
-        rw: "",
-    });
-
-    const handleChange = (e) => {
-        setNewParent({ ...newParent, [e.target.name]: e.target.value });
-    };
-
-    const handleAddParent = async () => {
-        try {
-            const response = await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}/parents`,
-                {
-                    parent_name: newParent.name,
-                    kk_number: newParent.kk,
-                    nik: newParent.nik,
-                    phone_number: newParent.hp,
-                    address: newParent.address,
-                    rt: newParent.rt,
-                    rw: newParent.rw,
-                }
-            );
-
-            if (response.status === 200) {
-                setData([...data, response.data.parent]);
-                setNewParent({
-                    name: "",
-                    kk: "",
-                    nik: "",
-                    hp: "",
-                    address: "",
-                    rt: "",
-                    rw: "",
-                });
-                document.getElementById("add-parent-modal").checked = false;
-                toast.success(response.data.msg);
-            }
-        } catch (error) {
-            console.error(error);
-            toast.error("Server error");
-            toast.error(error.response.data.msg);
-        }
-    };
-
-    const handleDeleteParent = async (id) => {
-        try {
-            const response = await axios.delete(
-                `${process.env.NEXT_PUBLIC_API_URL}/parents/${id}`
-            );
-
-            if (response.status === 200) {
-                fetchData();
-                toast.success(response.data.msg);
-            }
-        } catch (error) {
-            console.error(error);
-            toast.error("Server error");
-            toast.error(error.response.data.msg);
-        }
-    };
-
-    const handleUpdateClick = (parent) => {
-        setCurrentParent(parent);
-        setIsUpdateModalOpen(true);
-    };
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -109,11 +38,9 @@ const ParentTable = () => {
     return (
         <div className="container mx-auto mt-10 min-h-screen p-6">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">
-                    Data Orang Tua
-                </h2>
+                <h2 className="text-2xl font-bold text-gray-900">Data Anak</h2>
                 <label
-                    htmlFor="add-parent-modal"
+                    htmlFor="add-babies-modal"
                     className="btn border-black bg-white text-black hover:bg-gray-100 hover:text-gray-900"
                 >
                     Tambah Data
@@ -124,11 +51,13 @@ const ParentTable = () => {
                     <thead>
                         <tr className="bg-gray-200 text-gray-900">
                             <th className="p-3">Nama</th>
-                            <th className="p-3">Nomor KK</th>
-                            <th className="p-3">NIK</th>
-                            <th className="p-3">Nomor HP</th>
-                            <th className="p-3">Alamat</th>
-                            <th className="p-3">RT/RW</th>
+                            <th className="p-3">Tanggal Pemeriksaan</th>
+                            <th className="p-3">Berat</th>
+                            <th className="p-3">Tinggi</th>
+                            <th className="p-3">Lingkaran Kepala</th>
+                            <th className="p-3">ASI Ekslusif</th>
+                            <th className="p-3">Vitamin A</th>
+                            <th className="p-3">PMBA</th>
                             <th className="p-3"></th>
                         </tr>
                     </thead>
@@ -139,28 +68,36 @@ const ParentTable = () => {
                                 className="border-b hover:bg-gray-100"
                             >
                                 <td className="p-3 text-gray-800">
-                                    {item.parent_name}
+                                    {item.Baby.baby_name}
                                 </td>
                                 <td className="p-3 text-gray-800">
-                                    {item.kk_number}
+                                    {format(
+                                        new Date(item.check_date),
+                                        "dd-MM-yyyy"
+                                    )}
                                 </td>
                                 <td className="p-3 text-gray-800">
-                                    {item.nik}
+                                    {item.weight} kg
                                 </td>
                                 <td className="p-3 text-gray-800">
-                                    {item.phone_number}
+                                    {item.height} cm
                                 </td>
                                 <td className="p-3 text-gray-800">
-                                    {item.address}
+                                    {item.head_circumference} cm
                                 </td>
-                                <td className="p-3 text-gray-800">{`${item.rt}/${item.rw}`}</td>
+                                <td className="p-3 text-gray-800">
+                                    {item.exclusive_breastfeeding
+                                        ? "Ya"
+                                        : "Tidak"}
+                                </td>
+                                <td className="p-3 text-gray-800">
+                                    {item.vit_a ? "Ya" : "Tidak"}
+                                </td>
+                                <td className="p-3 text-gray-800">
+                                    {item.pmba}
+                                </td>
                                 <td className="p-3">
-                                    <button
-                                        className="btn btn-error text-white hover:bg-red-600 transition-colors duration-200"
-                                        onClick={() =>
-                                            handleDeleteParent(item.id)
-                                        }
-                                    >
+                                    <button className="btn btn-error text-white hover:bg-red-600 transition-colors duration-200">
                                         Delete
                                     </button>
                                 </td>
@@ -190,19 +127,19 @@ const ParentTable = () => {
 
             <input
                 type="checkbox"
-                id="add-parent-modal"
+                id="add-babies-modal"
                 className="modal-toggle"
             />
             <div className="modal">
                 <div className="modal-box relative bg-white">
                     <label
-                        htmlFor="add-parent-modal"
+                        htmlFor="add-babies-modal"
                         className="btn btn-sm btn-circle absolute right-2 top-2"
                     >
                         ✕
                     </label>
                     <h3 className="text-lg font-bold text-gray-900">
-                        Tambah Data Orang Tua
+                        Tambah Data Bayi
                     </h3>
                     <div className="form-control mt-4">
                         <label className="label">
@@ -213,21 +150,17 @@ const ParentTable = () => {
                         <input
                             type="text"
                             name="name"
-                            value={newParent.name}
-                            onChange={handleChange}
                             className="input input-bordered bg-white text-gray-900"
                         />
 
                         <label className="label mt-2">
                             <span className="label-text text-gray-900">
-                                Nomor KK
+                                NIK
                             </span>
                         </label>
                         <input
                             type="text"
                             name="kk"
-                            value={newParent.kk}
-                            onChange={handleChange}
                             className="input input-bordered bg-white text-gray-900"
                         />
 
@@ -239,8 +172,6 @@ const ParentTable = () => {
                         <input
                             type="text"
                             name="nik"
-                            value={newParent.nik}
-                            onChange={handleChange}
                             className="input input-bordered bg-white text-gray-900"
                         />
 
@@ -252,8 +183,6 @@ const ParentTable = () => {
                         <input
                             type="text"
                             name="hp"
-                            value={newParent.hp}
-                            onChange={handleChange}
                             className="input input-bordered bg-white text-gray-900"
                         />
 
@@ -265,8 +194,6 @@ const ParentTable = () => {
                         <input
                             type="text"
                             name="address"
-                            value={newParent.address}
-                            onChange={handleChange}
                             className="input input-bordered bg-white text-gray-900"
                         />
 
@@ -276,8 +203,6 @@ const ParentTable = () => {
                         <input
                             type="text"
                             name="rt"
-                            value={newParent.rt}
-                            onChange={handleChange}
                             className="input input-bordered bg-white text-gray-900"
                         />
 
@@ -287,15 +212,10 @@ const ParentTable = () => {
                         <input
                             type="text"
                             name="rw"
-                            value={newParent.rw}
-                            onChange={handleChange}
                             className="input input-bordered bg-white text-gray-900"
                         />
 
-                        <button
-                            onClick={handleAddParent}
-                            className="btn btn-primary mt-4 text-white"
-                        >
+                        <button className="btn btn-primary mt-4 text-white">
                             Simpan
                         </button>
                     </div>
@@ -305,4 +225,4 @@ const ParentTable = () => {
     );
 };
 
-export default ParentTable;
+export default HistoryTable;
