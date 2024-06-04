@@ -38,7 +38,9 @@ const HistoryTable = () => {
     return (
         <div className="container mx-auto mt-10 min-h-screen p-6">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">Data Anak</h2>
+                <h2 className="text-2xl font-bold text-gray-900">
+                    Riwayat Pemeriksaan
+                </h2>
                 <label
                     htmlFor="add-babies-modal"
                     className="btn border-black bg-white text-black hover:bg-gray-100 hover:text-gray-900"

@@ -22,8 +22,14 @@ function loginPage() {
         e.preventDefault();
 
         try {
-            const response = await axios.post("/login", { email, password });
-            const { token } = response;
+            const response = await axios.post(
+                `${process.env.NEXT_PUBLIC_API_URL}/users/login`,
+                {
+                    email,
+                    password,
+                }
+            );
+            const { token } = response.data;
 
             Cookies.set("token", token);
 

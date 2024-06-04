@@ -11,6 +11,10 @@ const inter = Inter({ subsets: ["latin"] });
 export default function RootLayout({ children }) {
     const pathname = usePathname();
 
+    if (typeof window !== "undefined") {
+        localStorage.theme = "light";
+    }
+
     return (
         <html lang="en">
             <body className={inter.className}>

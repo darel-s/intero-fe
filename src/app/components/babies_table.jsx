@@ -4,11 +4,87 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
+import Cookies from "js-cookie";
 
 const BabiesTable = () => {
     const [data, setData] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
+    const [startDate, setStartDate] = useState(new Date());
+    const [parents, setParents] = useState([]);
+
+    const token = Cookies.get("token");
+    const decodedToken = parseJwt(token);
+    const puskesmasId = decodedToken.puskesmas_location;
+
+    const [babyData, setBabyData] = useState({
+        baby_name: "",
+        birth_date: "",
+        gender: "",
+        nik: "",
+        parent_id: "",
+        birth_weight: "",
+        birth_height: "",
+        condition_id: 1,
+        puskesmas_location: puskesmasId,
+    });
+
+    const handleChange = (e) => {
+        let value = e.target.value;
+
+        setBabyData({
+            ...babyData,
+            [e.target.name]: value,
+        });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            const response = await axios.post(
+                `${process.env.NEXT_PUBLIC_API_URL}/babies`,
+                babyData
+            );
+
+            toast.success("Data berhasil disimpan");
+            document.getElementById("add-babies-modal").checked = false;
+            fetchData();
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    function parseJwt(token) {
+        var base64Url = token.split(".")[1];
+        var base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        var jsonPayload = decodeURIComponent(
+            window
+                .atob(base64)
+                .split("")
+                .map(function (c) {
+                    return (
+                        "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)
+                    );
+                })
+                .join("")
+        );
+
+        return JSON.parse(jsonPayload);
+    }
+
+    useEffect(() => {
+        const token = Cookies.get("token");
+        const parsedToken = parseJwt(token);
+        const puskesmasId = parsedToken.puskesmas_location;
+
+        fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/parents/location/${puskesmasId}`
+        )
+            .then((response) => response.json())
+            .then((data) => setParents(data))
+            .catch((error) => console.error(error));
+    }, []);
 
     const fetchData = async () => {
         try {
@@ -33,6 +109,27 @@ const BabiesTable = () => {
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
+    };
+
+    const handleDelete = async (id) => {
+        try {
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/babies/${id}`,
+                {
+                    method: "DELETE",
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+
+            toast.success("Baby deleted successfully");
+            fetchData();
+        } catch (error) {
+            console.error(error);
+            toast.error("An error occurred while deleting the baby");
+        }
     };
 
     return (
@@ -95,7 +192,10 @@ const BabiesTable = () => {
                                     {item.HealthCondition.condition}
                                 </td>
                                 <td className="p-3">
-                                    <button className="btn btn-error text-white hover:bg-red-600 transition-colors duration-200">
+                                    <button
+                                        className="btn btn-error text-white hover:bg-red-600 transition-colors duration-200"
+                                        onClick={() => handleDelete(item.id)}
+                                    >
                                         Delete
                                     </button>
                                 </td>
@@ -147,18 +247,8 @@ const BabiesTable = () => {
                         </label>
                         <input
                             type="text"
-                            name="name"
-                            className="input input-bordered bg-white text-gray-900"
-                        />
-
-                        <label className="label mt-2">
-                            <span className="label-text text-gray-900">
-                                NIK
-                            </span>
-                        </label>
-                        <input
-                            type="text"
-                            name="kk"
+                            name="baby_name"
+                            onChange={handleChange}
                             className="input input-bordered bg-white text-gray-900"
                         />
 
@@ -170,50 +260,103 @@ const BabiesTable = () => {
                         <input
                             type="text"
                             name="nik"
+                            onChange={handleChange}
                             className="input input-bordered bg-white text-gray-900"
                         />
 
                         <label className="label mt-2">
                             <span className="label-text text-gray-900">
-                                Nomor HP
+                                Tanggal Lahir
+                            </span>
+                        </label>
+                        <input
+                            type="date"
+                            name="birth_date"
+                            value={babyData.birth_date}
+                            onChange={handleChange}
+                            className="input input-bordered bg-white text-gray-900"
+                        />
+
+                        <div className="flex flex-col mt-2">
+                            <label className="label mr-2 flex items-center">
+                                <span className="label-text text-gray-900">
+                                    Jenis Kelamin
+                                </span>
+                            </label>
+                            <div className="flex flex-col space-y-2">
+                                <label className="flex items-center cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="gender"
+                                        value="Male"
+                                        onChange={handleChange}
+                                        className="radio radio-primary"
+                                    />
+                                    <span className="ml-2 text-black">
+                                        Laki-laki
+                                    </span>
+                                </label>
+                                <label className="flex items-center cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="gender"
+                                        value="Female"
+                                        onChange={handleChange}
+                                        className="radio radio-primary"
+                                    />
+                                    <span className="ml-2 text-black">
+                                        Perempuan
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <label className="label mt-2">
+                            <span className="label-text text-gray-900">
+                                Nama Orang Tua
+                            </span>
+                        </label>
+                        <select
+                            name="parent_id"
+                            onChange={handleChange}
+                            className="input input-bordered bg-white text-gray-900"
+                        >
+                            <option value="">Pilih Orang Tua</option>
+                            {parents.map((parent) => (
+                                <option key={parent.id} value={parent.id}>
+                                    {parent.parent_name}
+                                </option>
+                            ))}
+                        </select>
+
+                        <label className="label mt-2">
+                            <span className="label-text text-gray-900">
+                                Berat Lahir
                             </span>
                         </label>
                         <input
                             type="text"
-                            name="hp"
+                            name="birth_weight"
+                            onChange={handleChange}
                             className="input input-bordered bg-white text-gray-900"
                         />
 
                         <label className="label mt-2">
                             <span className="label-text text-gray-900">
-                                Alamat
+                                Tinggi Lahir
                             </span>
                         </label>
                         <input
                             type="text"
-                            name="address"
+                            name="birth_height"
+                            onChange={handleChange}
                             className="input input-bordered bg-white text-gray-900"
                         />
 
-                        <label className="label mt-2">
-                            <span className="label-text text-gray-900">RT</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="rt"
-                            className="input input-bordered bg-white text-gray-900"
-                        />
-
-                        <label className="label mt-2">
-                            <span className="label-text text-gray-900">RW</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="rw"
-                            className="input input-bordered bg-white text-gray-900"
-                        />
-
-                        <button className="btn btn-primary mt-4 text-white">
+                        <button
+                            className="btn btn-primary mt-4 text-white"
+                            onClick={handleSubmit}
+                        >
                             Simpan
                         </button>
                     </div>

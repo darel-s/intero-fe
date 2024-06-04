@@ -16,6 +16,7 @@ const ParentTable = () => {
                 `${process.env.NEXT_PUBLIC_API_URL}/parents`
             );
             setData(result.data);
+            console.log(result.data);
         } catch (error) {
             console.error(error);
         }
