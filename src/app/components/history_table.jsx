@@ -9,13 +9,39 @@ const HistoryTable = () => {
     const [data, setData] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
+    const [babyNames, setBabyNames] = useState([]);
+    const [formValues, setFormValues] = useState({
+        baby_id: "",
+        check_date: "",
+        weight: "",
+        height: "",
+        head_circumference: "",
+        exclusive_breastfeeding: "Tidak",
+        vit_a: "Tidak",
+        pmba: "",
+        puskesmas_location: "17",
+    });
+
+    useEffect(() => {
+        const fetchBabyNames = async () => {
+            try {
+                const response = await axios.get(
+                    `${process.env.NEXT_PUBLIC_API_URL}/babies/location/17`
+                );
+                setBabyNames(response.data);
+            } catch (error) {
+                console.error("Failed to fetch baby names", error);
+            }
+        };
+
+        fetchBabyNames();
+    }, []);
 
     const fetchData = async () => {
         try {
-            const result = await axios(
+            const result = await axios.get(
                 `${process.env.NEXT_PUBLIC_API_URL}/babyhistories`
             );
-            console.log(result.data);
             setData(result.data);
         } catch (error) {
             console.error(error);
@@ -33,6 +59,64 @@ const HistoryTable = () => {
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormValues({ ...formValues, [name]: value });
+    };
+
+    const handleDelete = async (id) => {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        try {
+            const response = await axios.delete(
+                `${apiUrl}/babyhistories/${id}`
+            );
+            if (response.status === 200) {
+                toast.success("Baby history deleted successfully.");
+                fetchData();
+            } else {
+                toast.error("Failed to delete the baby history.");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            toast.error("An error occurred while deleting the data.");
+        }
+    };
+
+    const handleFormSubmit = async (e) => {
+        e.preventDefault();
+        console.log(formValues);
+        const formattedFormValues = {
+            ...formValues,
+            exclusive_breastfeeding:
+                formValues.exclusive_breastfeeding === "Ya" ? 1 : 0,
+            vit_a: formValues.vit_a === "Ya" ? 1 : 0,
+        };
+
+        try {
+            const response = await axios.post(
+                `${process.env.NEXT_PUBLIC_API_URL}/babyhistories`,
+                formattedFormValues
+            );
+            toast.success("Baby history created successfully");
+            document.getElementById("add-parent-modal").checked = false;
+            fetchData();
+            setFormValues({
+                baby_id: "",
+                check_date: "",
+                weight: "",
+                height: "",
+                head_circumference: "",
+                exclusive_breastfeeding: "Tidak",
+                vit_a: "Tidak",
+                pmba: "",
+                puskesmas_location: "17",
+            });
+        } catch (error) {
+            console.error(error);
+            toast.error("An error occurred while saving the data");
+        }
     };
 
     return (
@@ -57,7 +141,7 @@ const HistoryTable = () => {
                             <th className="p-3">Berat</th>
                             <th className="p-3">Tinggi</th>
                             <th className="p-3">Lingkaran Kepala</th>
-                            <th className="p-3">ASI Ekslusif</th>
+                            <th className="p-3">ASI Eksklusif</th>
                             <th className="p-3">Vitamin A</th>
                             <th className="p-3">PMBA</th>
                             <th className="p-3"></th>
@@ -99,7 +183,12 @@ const HistoryTable = () => {
                                     {item.pmba}
                                 </td>
                                 <td className="p-3">
-                                    <button className="btn btn-error text-white hover:bg-red-600 transition-colors duration-200">
+                                    <button
+                                        onClick={() =>
+                                            handleDelete(item.id_check)
+                                        }
+                                        className="btn btn-error text-white hover:bg-red-600 transition-colors duration-200"
+                                    >
                                         Delete
                                     </button>
                                 </td>
@@ -141,86 +230,135 @@ const HistoryTable = () => {
                         ✕
                     </label>
                     <h3 className="text-lg font-bold text-gray-900">
-                        Tambah Data Bayi
+                        Tambah Data Pemeriksaan Bayi
                     </h3>
-                    <div className="form-control mt-4">
+                    <form
+                        className="form-control mt-4"
+                        onSubmit={handleFormSubmit}
+                    >
                         <label className="label">
                             <span className="label-text text-gray-900">
                                 Nama
                             </span>
                         </label>
-                        <input
-                            type="text"
-                            name="name"
+                        <select
+                            name="baby_id"
                             className="input input-bordered bg-white text-gray-900"
+                            value={formValues.baby_id}
+                            onChange={handleInputChange}
+                        >
+                            {babyNames.map((baby) => (
+                                <option key={baby.id} value={baby.id}>
+                                    {baby.baby_name}
+                                </option>
+                            ))}
+                        </select>
+
+                        <label className="label mt-2">
+                            <span className="label-text text-gray-900">
+                                Tanggal Pemeriksaan
+                            </span>
+                        </label>
+                        <input
+                            type="date"
+                            name="check_date"
+                            className="input input-bordered bg-white text-gray-900"
+                            value={formValues.check_date}
+                            onChange={handleInputChange}
                         />
 
                         <label className="label mt-2">
                             <span className="label-text text-gray-900">
-                                NIK
+                                Berat (kg)
                             </span>
                         </label>
                         <input
-                            type="text"
-                            name="kk"
+                            type="number"
+                            step="0.1"
+                            name="weight"
                             className="input input-bordered bg-white text-gray-900"
+                            value={formValues.weight}
+                            onChange={handleInputChange}
                         />
 
                         <label className="label mt-2">
                             <span className="label-text text-gray-900">
-                                NIK
+                                Tinggi (cm)
                             </span>
                         </label>
                         <input
-                            type="text"
-                            name="nik"
+                            type="number"
+                            step="0.1"
+                            name="height"
                             className="input input-bordered bg-white text-gray-900"
+                            value={formValues.height}
+                            onChange={handleInputChange}
                         />
 
                         <label className="label mt-2">
                             <span className="label-text text-gray-900">
-                                Nomor HP
+                                Lingkar Kepala (cm)
                             </span>
                         </label>
                         <input
-                            type="text"
-                            name="hp"
+                            type="number"
+                            step="0.1"
+                            name="head_circumference"
                             className="input input-bordered bg-white text-gray-900"
+                            value={formValues.head_circumference}
+                            onChange={handleInputChange}
                         />
 
                         <label className="label mt-2">
                             <span className="label-text text-gray-900">
-                                Alamat
+                                ASI Eksklusif
+                            </span>
+                        </label>
+                        <select
+                            name="exclusive_breastfeeding"
+                            className="select select-bordered bg-white text-gray-900"
+                            value={formValues.exclusive_breastfeeding}
+                            onChange={handleInputChange}
+                        >
+                            <option value="Ya">Ya</option>
+                            <option value="Tidak">Tidak</option>
+                        </select>
+
+                        <label className="label mt-2">
+                            <span className="label-text text-gray-900">
+                                Vitamin A
+                            </span>
+                        </label>
+                        <select
+                            name="vit_a"
+                            className="select select-bordered bg-white text-gray-900"
+                            value={formValues.vit_a}
+                            onChange={handleInputChange}
+                        >
+                            <option value="Ya">Ya</option>
+                            <option value="Tidak">Tidak</option>
+                        </select>
+
+                        <label className="label mt-2">
+                            <span className="label-text text-gray-900">
+                                PMBA
                             </span>
                         </label>
                         <input
                             type="text"
-                            name="address"
+                            name="pmba"
                             className="input input-bordered bg-white text-gray-900"
+                            value={formValues.pmba}
+                            onChange={handleInputChange}
                         />
 
-                        <label className="label mt-2">
-                            <span className="label-text text-gray-900">RT</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="rt"
-                            className="input input-bordered bg-white text-gray-900"
-                        />
-
-                        <label className="label mt-2">
-                            <span className="label-text text-gray-900">RW</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="rw"
-                            className="input input-bordered bg-white text-gray-900"
-                        />
-
-                        <button className="btn btn-primary mt-4 text-white">
+                        <button
+                            type="submit"
+                            className="btn btn-primary mt-4 text-white"
+                        >
                             Simpan
                         </button>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>

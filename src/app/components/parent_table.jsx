@@ -3,12 +3,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 const ParentTable = () => {
     const [data, setData] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
     const [currentParent, setCurrentParent] = useState(null);
+    const [modalVisible, setModalVisible] = useState(false);
+    const router = useRouter();
 
     const fetchData = async () => {
         try {
@@ -34,6 +37,7 @@ const ParentTable = () => {
         address: "",
         rt: "",
         rw: "",
+        puskesmas_location: 17,
     });
 
     const handleChange = (e) => {
@@ -52,11 +56,13 @@ const ParentTable = () => {
                     address: newParent.address,
                     rt: newParent.rt,
                     rw: newParent.rw,
+                    puskesmas_location: newParent.puskesmas_location,
                 }
             );
 
             if (response.status === 200) {
-                setData([...data, response.data.parent]);
+                const { parent } = response.data;
+                setData([...data, parent]);
                 setNewParent({
                     name: "",
                     kk: "",
@@ -65,14 +71,22 @@ const ParentTable = () => {
                     address: "",
                     rt: "",
                     rw: "",
+                    puskesmas_location: 17,
                 });
                 document.getElementById("add-parent-modal").checked = false;
-                toast.success(response.data.msg);
+                toast.success("Data berhasil ditambahkan");
+                fetchData();
             }
         } catch (error) {
             console.error(error);
             toast.error("Server error");
-            toast.error(error.response.data.msg);
+            if (
+                error.response &&
+                error.response.data &&
+                error.response.data.msg
+            ) {
+                toast.error(error.response.data.msg);
+            }
         }
     };
 
